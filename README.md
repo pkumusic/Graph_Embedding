@@ -1,5 +1,5 @@
 # Data preprocess
-![Design Document](../syn_venue.png =400x200)
+![Design Document](pictures/syn_venue.png =400x200)
 
 Targets point to similar context are similar.
 Here:
