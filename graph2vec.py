@@ -15,6 +15,8 @@ from collections import OrderedDict
 np.random.seed(2016)
 floatX = theano.config.floatX
 
+#theano.config.compute_test_value = 'warn'
+
 def train_graph2vec(
         data,
         node_vecs_values=None, node_vecs_c_values=None, type_vecs_values=None, type_vecs_c_values=None,
@@ -59,14 +61,15 @@ def train_graph2vec(
     x_type_0 = T.iscalar('x_type_0')
     x_type_1 = T.iscalar('x_type_1')
     x_comb = T.concatenate([x,x_neg],axis=0)
-    node_vec_input = T.concatenate(
-                         [node_vecs[x_comb[:,0]].reshape((x_comb.shape[0], node_vecs.shape[1])),
-                          node_vecs_c[x_comb[:,1]].reshape((x_comb.shape[0], node_vecs_c.shape[1]))],
-                         axis=1)
-    type_vec_input = T.concatenate([type_vecs[T.cast(x_type_0,dtype='int32')],
-                                    type_vecs_c[T.cast(x_type_1,dtype='int32')]], axis=0) # a row. shape: (n,)
-    type_vec_input = T.extra_ops.repeat(type_vec_input.dimshuffle('x', 0), x_comb.shape[0], axis=0) # dimshuffle('x', 0)-> make (n,) to (1,n)
-    vecs_input = T.concatenate([node_vec_input, type_vec_input], axis=1)
+    node_vec_input = T.concatenate([node_vecs[x_comb[:,0]],node_vecs_c[x_comb[:,1]]],axis=1)
+    type_vec_input = T.concatenate([type_vecs[x_type_0], type_vecs_c[x_type_1]])  # a row. shape: (n,)
+    type_vec_input = type_vec_input.dimshuffle('x', 0)
+    type_vec_input = type_vec_input.repeat(x_comb.shape[0], axis=0)  # dimshuffle('x', 0)-> make (n,) to (1,n)
+    if type_vecs_dim == 0:
+        print "---- No Type Vector ----"
+        vecs_input = node_vec_input
+    else:
+        vecs_input = T.concatenate([node_vec_input, type_vec_input], axis=1)
     vecs_input_dim = (node_vecs_dim+type_vecs_dim)*2
     input_layer = lasagne.layers.InputLayer(shape=(None,vecs_input_dim), input_var=vecs_input, name='input_layer')
     prev_layer = input_layer
@@ -89,10 +92,13 @@ def train_graph2vec(
     loss_train = -1*T.mean(T.log(T.nnet.sigmoid(ones_comb.dimshuffle(0,'x')*nn_output)))
     # training routines
     params = lasagne.layers.get_all_params(output_layer, trainable=True)
-    params += [node_vecs, node_vecs_c, type_vecs, type_vecs_c]
+    if type_vecs_dim == 0:
+        params += [node_vecs, node_vecs_c]
+    else:
+        params += [node_vecs, node_vecs_c, type_vecs, type_vecs_c]
     updates = create_updates(loss_train, params, update_alg, learning_rate=learning_rate, momentum=momentum)
     train_fn = theano.function([x, x_neg, x_type_0, x_type_1], loss_train,
-                               updates=updates)
+                               updates=updates, on_unused_input='ignore')
     normalize_updates = create_normalization(node_vecs,node_vecs_c,type_vecs,type_vecs_c)
     normalize_fn = theano.function(inputs=[], updates=normalize_updates)
 
@@ -100,9 +106,9 @@ def train_graph2vec(
     print('Preparing data ...')
     # (padded) number of batchs per epoch of each type pair
     type_pair_freqs = np.array(type_pair_freqs, dtype='int32')
-    print 'type_pair_freqs', type_pair_freqs
+    #print 'type_pair_freqs', type_pair_freqs
     type_pair_n_batchs = np.ceil(type_pair_freqs*1./batch_size).astype(int)
-    print 'type_pair_n_batchs', type_pair_n_batchs
+    #print 'type_pair_n_batchs', type_pair_n_batchs
     # pad and shuffle edges
     for tp in xrange(len(typed_edges)):
         extra_data_num = type_pair_n_batchs[tp]*batch_size-type_pair_freqs[tp]
@@ -140,6 +146,7 @@ def train_graph2vec(
             normalize_fn()
             ##
             # display
+
             biter += 1
             if biter % display_iter == 0:
                 print('epoch: %i, iter: %i, types %i-%i, loss %f' % (epoch, biter, type_0, type_1, loss))
@@ -153,7 +160,7 @@ def train_graph2vec(
         if lr_updated:
             updates = create_updates(loss_train, params, update_alg, learning_rate=learning_rate, momentum=momentum)
             train_fn = theano.function([x, x_neg, x_type_0, x_type_1], loss_train,
-                                       updates=updates)
+                                       updates=updates, on_unused_input='ignore')
         print('epoch: %i, loss %f' % (epoch, loss))
 
 
@@ -197,7 +204,7 @@ def sample_negative(edge_batch, neighbors, node_distr, n_negs):
 
 
 def build_neg_distr(typed_node_distr):
-    print typed_node_distr
+    #print typed_node_distr
     for t in xrange(len(typed_node_distr)):
         node_distr = typed_node_distr[t]
         nodes = node_distr[:,0]
@@ -206,7 +213,7 @@ def build_neg_distr(typed_node_distr):
         node_distr /= sums[np.newaxis, :]
         node_distr[:,0] = nodes
         typed_node_distr[t] = node_distr
-    print typed_node_distr
+    #print typed_node_distr
     return typed_node_distr
 
 def type_pair_iterator(type_pair_n_batchs):
@@ -269,6 +276,12 @@ def get_learning_rate(learning_rate, epoch, epoch_step_size, anneal_factor):
         print 'lr %f' % learning_rate
         updated = True
     return learning_rate, updated
+
+def inspect_inputs(i, node, fn):
+    print i, node, "input(s) value(s):", [input[0] for input in fn.inputs]
+
+def inspect_outputs(i, node, fn):
+    print " output(s) value(s):", [output[0] for output in fn.outputs]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Graph embedding configuration')
