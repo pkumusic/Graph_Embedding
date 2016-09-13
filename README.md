@@ -49,3 +49,20 @@ For the DNN, now the input is the concatenation of vectors of (target_node, cont
 Parameters:
 
 * batch_size: number of batches.
+
+
+# Input Format
+node_types.txt: (Include type and node index info)
+type 0
+0
+1
+type 1 
+4
+5
+edges.txt: (from target node to content node. Directed graph. )
+type 0 0
+0 1
+0 2
+type 0 1
+0 4
+0 5

@@ -97,7 +97,7 @@ def preprocess_data(node_type_file, edge_file):
 
 
 if __name__=="__main__":
-    dataset = 'syn_event'
+    dataset = 'syn1'
     path = "./data/" + dataset
     node_type_file = '%s/node_types.txt' % path
     edge_file = '%s/edges.txt' % path

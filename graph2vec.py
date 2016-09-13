@@ -282,7 +282,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     #logger = utils.get_logger("graph-embed")
     #dataset = 'foursquare'
-    dataset = 'syn_event'
+    dataset = 'syn1'
     data = cPickle.load(open("./data/%s/%s.binary.p"%(dataset,dataset),"rb"))
     # train_graph2vec(
     #     data=data,
@@ -295,10 +295,10 @@ if __name__ == "__main__":
     train_graph2vec(
         data=data,
         node_vecs_values=None, node_vecs_c_values=None, type_vecs_values=None, type_vecs_c_values=None,
-        node_vecs_dim=9, type_vecs_dim=1,
+        node_vecs_dim=10, type_vecs_dim=0,
         dist_nn_sizes=[30, 15], dropout=[1, 0],
-        n_negs=2, n_epochs=200, batch_size=1,
+        n_negs=2, n_epochs=400, batch_size=1,
         update_alg='momentum', momentum=0.9, learning_rate=0.01,
         epoch_step_size=20, anneal_factor=0.2,
-        display_iter=100, snapshot_epoch=25, snapshot_prefix='output/syn_event')
+        display_iter=100, snapshot_epoch=50, snapshot_prefix='output/%s'%dataset)
 
