@@ -285,6 +285,7 @@ def inspect_outputs(i, node, fn):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Graph embedding configuration')
+    parser.add_argument('-d', '--dataset', help='Give the dataset name under data folder', required="True")
     #parser.add_argument('--fine_tune', action='store_true', help='Fine tune the word embeddings')
     #parser.add_argument('--embedding', choices=['word2vec', 'glove', 'senna'], help='Embedding for words',
     #                    required=True)
@@ -295,7 +296,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     #logger = utils.get_logger("graph-embed")
     #dataset = 'foursquare'
-    dataset = 'syn1'
+
+    dataset = args.dataset
     data = cPickle.load(open("./data/%s/%s.binary.p"%(dataset,dataset),"rb"))
     # train_graph2vec(
     #     data=data,

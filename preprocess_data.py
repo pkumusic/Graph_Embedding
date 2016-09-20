@@ -2,6 +2,7 @@ __author__="zhiting"
 
 import numpy as np
 import cPickle
+import argparse
 
 
 def preprocess_data(node_type_file, edge_file):
@@ -97,7 +98,12 @@ def preprocess_data(node_type_file, edge_file):
 
 
 if __name__=="__main__":
-    dataset = 'syn1'
+    parser = argparse.ArgumentParser(description="Pre-process node and edge data")
+    parser.add_argument('-d', '--dataset', help='Give the dataset name under data folder', required="True")
+    args = parser.parse_args()
+
+    dataset = args.dataset
+    #dataset = 'syn1'
     path = "./data/" + dataset
     node_type_file = '%s/node_types.txt' % path
     edge_file = '%s/edges.txt' % path

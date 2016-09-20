@@ -18,7 +18,7 @@ def predict(snapshot_filename, targets, typed_nodes, venue_info,
             batch_size=500, output_filename='output/predict', output_topk=5000):
     """
     targets: nx3 with each row = [int:source_index, int:source_node_type, int:target_node_type]
-"""
+    """
     embeddings, all_param_values, dist_nn_sizes, dropout, _ = restore(snapshot_filename)
 
     # initialize embeddings
@@ -126,14 +126,16 @@ def read_venue_info(filename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Graph embedding prediction configuration')
+    parser.add_argument('-m', '--model', help='Trained Model', required="True")
+    parser.add_argument('-d', '--dataset', help='Give the dataset name under data folder', required="True")
     args = parser.parse_args()
 
     # read data
     # dataset = 'foursquare'
     #snapshot_filename = 'output/foursquare_n30_t30_dnn50-10_b1000_lr0.000100_e20_it16653.model'
     #snapshot_filename = 'output/syn_event_n20_t10_dnn30-15_drp10_b2_lr0.010000-20-0.2_e175.model'
-    snapshot_filename = 'output/syn1/'+'syn1_n10_t5_dnn30-15_drp10_b1_lr0.010000-20-0.2_e350.model'
-    dataset = 'syn1'
+    snapshot_filename = args.model
+    dataset = args.dataset
     data = cPickle.load(open("./data/%s/%s.binary.p" % (dataset, dataset), "rb"))
     typed_nodes = data[1]
     venueIndex_info = read_venue_info("./data/foursquare/venue_info.txt");
@@ -142,8 +144,6 @@ if __name__ == "__main__":
     #targets=[[0,0,1],[1,0,1],[100,0,1],[1000,0,1],[3000,0,1]]
     # For syn1
     targets=[[0,0,1],[1,0,1],[2,0,1],[3,0,1],[4,1,2],[5,1,2],[6,1,2],[0,0,0],[1,0,0],[2,0,0],[3,0,0],[4,1,1],[5,1,1],[6,1,1],[7,2,2],[8,2,2],[9,2,2]]
-    
-
 
     # predict
     predict(snapshot_filename=snapshot_filename,
